@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Moo7 Tech Mk — كيف تُخترق وكيف تحمي نفسك</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --blue:#0a84ff; --cyan:#00e5ff; --red:#ff3355; --green:#00ff88;
+  --yellow:#ffb800; --purple:#9d4eff; --bg:#040812; --panel:#0a1224;
+  --text:#e8f4ff; --dim:#7a92b8;
+  --font:'Cairo','Segoe UI',Tahoma,system-ui,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  background:radial-gradient(circle at 50% 0%,#0a1530,#02040a 70%);
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  font-family:var(--font);color:var(--text);overflow:hidden;
+}
+.stage{display:flex;flex-direction:column;align-items:center;gap:12px;padding:12px;max-height:100vh}
+.video-frame{
+  position:relative;width:min(400px,92vw,calc((100vh - 130px) * 9 / 16));
+  aspect-ratio:9/16;background:var(--bg);border-radius:22px;overflow:hidden;
+  box-shadow:0 0 60px rgba(0,170,255,.28),0 0 120px rgba(0,229,255,.08);
+  border:1px solid rgba(0,229,255,.22);
+}
+#particles{position:absolute;inset:0;width:100%;height:100%;z-index:0;opacity:.7;pointer-events:none}
+.scene{position:absolute;inset:0;z-index:2;opacity:0;pointer-events:none;transition:opacity .55s ease;padding:22px;display:flex;flex-direction:column;overflow:hidden}
+.scene.active{opacity:1;pointer-events:auto}
+.bg-glow{position:absolute;inset:0;z-index:-1;background:radial-gradient(circle at 50% 40%,rgba(0,229,255,.10),transparent 60%);pointer-events:none}
+
+/* ===== حركة الظهور المتسلسل الموحدة ===== */
+@keyframes boxPop{
+  0%{
+    opacity:0;
+    transform:translateY(28px) scale(.55);
+    filter:brightness(3) blur(3px);
+  }
+  45%{
+    opacity:1;
+    transform:translateY(-5px) scale(1.08);
+    filter:brightness(1.9) blur(0);
+  }
+  70%{
+    transform:translateY(2px) scale(.97);
+    filter:brightness(1.15);
+  }
+  100%{
+    opacity:1;
+    transform:translateY(0) scale(1);
+    filter:brightness(1);
+  }
+}
+@keyframes borderFlash{
+  0%,60%{ box-shadow:0 0 0 0 rgba(0,229,255,0); }
+  70%{ box-shadow:0 0 28px 4px rgba(0,229,255,.65); }
+  100%{ box-shadow:0 0 0 0 rgba(0,229,255,0); }
+}
+
+/* ===== المشهد 1: HOOK ===== */
+#scene-hook{justify-content:space-between;align-items:center;background:radial-gradient(circle at 50% 45%,rgba(255,51,85,.22),transparent 70%)}
+.hook-flash{position:absolute;inset:0;background:rgba(255,51,85,.55);animation:flashOut .5s ease-out forwards;pointer-events:none;z-index:10}
+@keyframes flashOut{from{opacity:1}to{opacity:0}}
+.hook-emoji{font-size:64px;line-height:1;filter:drop-shadow(0 0 24px rgba(255,51,85,.9));animation:emojiShake .6s ease-in-out infinite;margin-top:6px}
+@keyframes emojiShake{0%,100%{transform:rotate(-6deg) scale(1)}50%{transform:rotate(6deg) scale(1.08)}}
+.hook-phone-wrap{position:relative;width:56%;margin:0 auto;flex:1;display:flex;align-items:center;justify-content:center}
+.hook-phone{position:relative;width:100%;filter:drop-shadow(0 0 22px rgba(0,229,255,.4))}
+.hook-phone svg{width:100%;display:block}
+.danger-ring{position:absolute;inset:-14px;border-radius:50%;border:2px solid rgba(255,51,85,.5);animation:ringOut 1.6s ease-out infinite;pointer-events:none}
+.danger-ring:nth-child(2){animation-delay:.8s}
+@keyframes ringOut{0%{transform:scale(.7);opacity:.9}100%{transform:scale(1.15);opacity:0}}
+.scan-line{animation:scanY 2.2s ease-in-out infinite}
+@keyframes scanY{0%,100%{transform:translateY(0);opacity:.2}50%{transform:translateY(330px);opacity:1}}
+.hack-beam{stroke:var(--red);stroke-width:2;stroke-dasharray:6 8;animation:dashFlow 1s linear infinite;filter:drop-shadow(0 0 6px var(--red))}
+@keyframes dashFlow{to{stroke-dashoffset:-28}}
+.phone-glitch{animation:phoneGlitch .35s steps(2) infinite}
+@keyframes phoneGlitch{0%,100%{transform:translateX(0)}50%{transform:translateX(-2px)}}
+.alert-badge{position:absolute;top:-4px;left:-4px;width:44px;height:44px;border-radius:50%;background:rgba(255,51,85,.2);border:2px solid var(--red);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;color:var(--red);animation:pulseRed .9s ease-in-out infinite;z-index:5}
+@keyframes pulseRed{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(255,51,85,.7)}50%{transform:scale(1.12);box-shadow:0 0 0 16px rgba(255,51,85,0)}}
+.hook-title{width:100%;text-align:center;margin-bottom:4px}
+.hook-line{font-size:24px;font-weight:900;line-height:1.3;opacity:0;animation:fadeUp .5s cubic-bezier(.2,.9,.3,1.4) both}
+.hook-line.alert{font-size:32px;color:var(--red);text-shadow:0 0 22px rgba(255,51,85,.8);animation-delay:.8s}
+.hook-line:nth-child(2){animation-delay:1.4s}
+.hook-line.danger{animation-delay:2.0s;color:var(--red);text-shadow:0 0 18px rgba(255,51,85,.6)}
+.hook-line.now{animation-delay:2.6s;color:var(--cyan);text-shadow:0 0 18px rgba(0,229,255,.7);font-size:26px}
+
+/* ===== المشهد 2: INTRO ===== */
+#scene-intro{align-items:center;justify-content:center;text-align:center;gap:18px}
+.channel-name{font-size:26px;font-weight:900;color:#fff;letter-spacing:2px;padding:10px 22px;border:2px solid rgba(0,229,255,.4);border-radius:12px;background:rgba(0,229,255,.06);box-shadow:0 0 24px rgba(0,229,255,.25);animation:fadeUp .7s ease .1s both}
+.intro-q{font-size:28px;font-weight:900;line-height:1.4}
+.intro-q span{opacity:0;display:inline-block;animation:fadeUp .6s ease both}
+.intro-q .w1{animation-delay:.6s}
+.intro-q .w2{animation-delay:1.0s;color:var(--red);text-shadow:0 0 14px rgba(255,51,85,.5)}
+.intro-q .w3{animation-delay:1.7s;color:var(--cyan);text-shadow:0 0 14px rgba(0,229,255,.5)}
+.intro-divider{width:60px;height:3px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);border-radius:3px;animation:fadeIn .8s ease 1.4s both}
+.intro-sub{font-size:14px;color:var(--dim);animation:fadeUp .7s ease 2.2s both}
+
+/* ===== المشهد 3: ما هو الاختراق ===== */
+#scene-what{justify-content:center;gap:14px}
+.scene-title{font-size:21px;font-weight:900;text-align:center;animation:fadeUp .6s ease both}
+.scene-title em{color:var(--red);font-style:normal;text-shadow:0 0 14px rgba(255,51,85,.5)}
+.scene-title.em-green em{color:var(--green);text-shadow:0 0 14px rgba(0,255,136,.5)}
+.network-diagram{position:relative;width:100%;height:200px;display:flex;align-items:center;justify-content:center}
+.network-diagram svg{width:100%;height:100%}
+.node{fill:var(--panel);stroke:var(--cyan);stroke-width:2;animation:nodePop .5s ease both}
+.node.red{stroke:var(--red);fill:rgba(255,51,85,.12)}
+.node-line{stroke:var(--cyan);stroke-width:1.5;stroke-dasharray:4 4;opacity:.5;animation:dashFlow 2s linear infinite}
+.attack-path{stroke:var(--red);stroke-width:2.5;stroke-dasharray:6 6;animation:dashFlow .8s linear infinite;filter:drop-shadow(0 0 6px var(--red))}
+.lock-break{animation:lockShake .4s ease 1.5s 3}
+@keyframes lockShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px) rotate(-4deg)}75%{transform:translateX(3px) rotate(4deg)}}
+@keyframes nodePop{from{opacity:0;transform:scale(.5)}to{opacity:1;transform:scale(1)}}
+.def-list{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+
+/* === الظهور المتسلسل الموحد لكل الصناديق === */
+.def-item, .method-card, .flow-step, .sign-item, .protect-item, .step-item{
+  animation:boxPop .75s cubic-bezier(.2,.9,.3,1.3) both, borderFlash 1.2s ease both;
+}
+
+.def-item{display:flex;align-items:center;gap:10px;background:rgba(10,18,36,.7);border:1px solid rgba(0,229,255,.18);border-radius:12px;padding:10px 14px;font-size:14px;opacity:0}
+.def-item:nth-child(1){animation-delay:.9s, .9s}
+.def-item:nth-child(2){animation-delay:1.4s, 1.4s}
+.def-item:nth-child(3){animation-delay:1.9s, 1.9s}
+.def-item .dot{width:8px;height:8px;border-radius:50%;background:var(--red);box-shadow:0 0 10px var(--red);flex-shrink:0}
+
+/* ===== المشهد 4: طرق الاختراق ===== */
+#scene-methods{justify-content:flex-start;gap:10px;padding-top:26px}
+.methods-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+.method-card{background:linear-gradient(145deg,rgba(10,18,36,.95),rgba(5,10,20,.95));border:1px solid rgba(0,229,255,.2);border-radius:14px;padding:12px 8px;display:flex;flex-direction:column;align-items:center;gap:5px;opacity:0;position:relative;overflow:hidden}
+.method-card .m-emoji{font-size:30px;animation:emojiBounce 1.8s ease-in-out infinite}
+.method-card:nth-child(1) .m-emoji{animation-delay:0s}
+.method-card:nth-child(2) .m-emoji{animation-delay:.4s}
+.method-card:nth-child(3) .m-emoji{animation-delay:.8s}
+.method-card:nth-child(4) .m-emoji{animation-delay:1.2s}
+@keyframes emojiBounce{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-4px) scale(1.1)}}
+.method-card .m-name{font-size:13px;font-weight:700;text-align:center}
+.method-card .m-sub{font-size:10px;color:var(--dim);text-align:center}
+.method-card.red{border-color:rgba(255,51,85,.4)}
+.method-card.red .m-name{color:var(--red)}
+.method-card.yellow{border-color:rgba(255,184,0,.35)}
+.method-card.yellow .m-name{color:var(--yellow)}
+.method-card.purple{border-color:rgba(157,78,255,.35)}
+.method-card.purple .m-name{color:var(--purple)}
+.method-card.blue .m-name{color:var(--cyan)}
+.method-card:nth-child(1){animation-delay:.7s, .7s}
+.method-card:nth-child(2){animation-delay:1.9s, 1.9s}
+.method-card:nth-child(3){animation-delay:3.1s, 3.1s}
+.method-card:nth-child(4){animation-delay:4.3s, 4.3s}
+
+/* ===== المشهد 5: كيف تحدث الإصابة ===== */
+#scene-how{justify-content:center;gap:14px}
+.flow{display:flex;flex-direction:column;gap:6px;align-items:center;width:100%}
+.flow-step{display:flex;align-items:center;gap:12px;background:rgba(10,18,36,.85);border:1px solid rgba(0,229,255,.2);border-radius:12px;padding:10px 14px;width:90%;opacity:0}
+.flow-step:nth-child(1){animation-delay:.5s, .5s;border-color:rgba(255,51,85,.4)}
+.flow-step:nth-child(3){animation-delay:1.6s, 1.6s}
+.flow-step:nth-child(5){animation-delay:2.7s, 2.7s}
+.flow-step:nth-child(7){animation-delay:3.8s, 3.8s;border-color:rgba(0,255,136,.4)}
+.flow-num{width:30px;height:30px;border-radius:50%;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;flex-shrink:0;box-shadow:0 0 14px rgba(255,51,85,.5)}
+.flow-step:nth-child(7) .flow-num{background:var(--green);box-shadow:0 0 14px rgba(0,255,136,.5)}
+.flow-text{font-size:13px;font-weight:700}
+.flow-arrow{color:var(--cyan);font-size:20px;opacity:0;animation:arrowIn .4s ease both,pulseArrow 1s ease-in-out infinite}
+.flow-arrow:nth-child(2){animation-delay:1.1s,1.5s}
+.flow-arrow:nth-child(4){animation-delay:2.2s,2.6s}
+.flow-arrow:nth-child(6){animation-delay:3.3s,3.7s}
+@keyframes arrowIn{from{opacity:0;transform:scale(.5)}to{opacity:1;transform:scale(1)}}
+@keyframes pulseArrow{0%,100%{transform:translateY(0);opacity:.7}50%{transform:translateY(4px);opacity:1}}
+
+/* ===== المشهد 6: علامات الاختراق ===== */
+#scene-signs{justify-content:flex-start;gap:12px;padding-top:26px}
+.signs-list{display:flex;flex-direction:column;gap:10px;margin-top:6px}
+.sign-item{display:flex;align-items:center;gap:12px;background:rgba(10,18,36,.8);border:1px solid rgba(255,184,0,.25);border-radius:14px;padding:12px;opacity:0}
+.sign-item:nth-child(1){animation-delay:.6s, .6s}
+.sign-item:nth-child(2){animation-delay:1.5s, 1.5s}
+.sign-item:nth-child(3){animation-delay:2.4s, 2.4s}
+.sign-item:nth-child(4){animation-delay:3.3s, 3.3s}
+.sign-icon{width:44px;height:44px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:26px;background:rgba(255,184,0,.1);border-radius:10px;animation:emojiBounce 1.5s ease-in-out infinite}
+.sign-item:nth-child(1) .sign-icon{animation-delay:0s}
+.sign-item:nth-child(2) .sign-icon{animation-delay:.3s}
+.sign-item:nth-child(3) .sign-icon{animation-delay:.6s}
+.sign-item:nth-child(4) .sign-icon{animation-delay:.9s}
+.sign-text .s-title{font-size:14px;font-weight:700;color:var(--yellow)}
+.sign-text .s-desc{font-size:11px;color:var(--dim);margin-top:2px}
+
+/* ===== المشهد 7: الحماية ===== */
+#scene-protect{justify-content:center;align-items:center;gap:10px;position:relative}
+.shield-center{position:relative;width:120px;height:140px;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 0 30px rgba(0,255,136,.5));animation:shieldFloat 3s ease-in-out infinite}
+@keyframes shieldFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.shield-center svg{width:100%;height:100%}
+.protect-pulse{position:absolute;inset:0;border-radius:50%;border:2px solid rgba(0,255,136,.4);animation:ringOut 2s ease-out infinite;pointer-events:none}
+.protect-pulse:nth-child(2){animation-delay:1s}
+.protect-orbit{position:relative;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+.protect-item{background:rgba(0,255,136,.06);border:1px solid rgba(0,255,136,.3);border-radius:12px;padding:10px 6px;display:flex;flex-direction:column;align-items:center;gap:4px;opacity:0}
+.protect-item:nth-child(1){animation-delay:1.2s, 1.2s}
+.protect-item:nth-child(2){animation-delay:1.8s, 1.8s}
+.protect-item:nth-child(3){animation-delay:2.4s, 2.4s}
+.protect-item:nth-child(4){animation-delay:3.0s, 3.0s}
+.protect-item:nth-child(5){animation-delay:3.6s, 3.6s;grid-column:1/-1;max-width:60%;margin:0 auto}
+.protect-item .p-emoji{font-size:24px;animation:emojiBounce 1.6s ease-in-out infinite}
+.protect-item:nth-child(1) .p-emoji{animation-delay:0s}
+.protect-item:nth-child(2) .p-emoji{animation-delay:.4s}
+.protect-item:nth-child(3) .p-emoji{animation-delay:.8s}
+.protect-item:nth-child(4) .p-emoji{animation-delay:1.2s}
+.protect-item:nth-child(5) .p-emoji{animation-delay:1.6s}
+.protect-item .p-name{font-size:11px;font-weight:700;text-align:center;color:#cfeede}
+
+/* ===== المشهد 8: خطوات عملية ===== */
+#scene-steps{justify-content:flex-start;gap:12px;padding-top:26px}
+.steps-list{display:flex;flex-direction:column;gap:10px;margin-top:6px}
+.step-item{display:flex;align-items:center;gap:12px;background:linear-gradient(90deg,rgba(0,229,255,.08),transparent);border-right:3px solid var(--cyan);border-radius:0 12px 12px 0;padding:12px;opacity:0}
+.step-item:nth-child(1){animation-delay:.6s, .6s}
+.step-item:nth-child(2){animation-delay:1.5s, 1.5s}
+.step-item:nth-child(3){animation-delay:2.4s, 2.4s}
+.step-item:nth-child(4){animation-delay:3.3s, 3.3s}
+.step-num{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#fff;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 14px rgba(0,229,255,.5);font-size:15px}
+.step-emoji{font-size:22px;animation:emojiBounce 1.8s ease-in-out infinite}
+.step-item:nth-child(1) .step-emoji{animation-delay:0s}
+.step-item:nth-child(2) .step-emoji{animation-delay:.4s}
+.step-item:nth-child(3) .step-emoji{animation-delay:.8s}
+.step-item:nth-child(4) .step-emoji{animation-delay:1.2s}
+.step-text{font-size:13px;font-weight:700}
+
+/* ===== المشهد 9: الخلاصة + اشتراك ===== */
+#scene-outro{align-items:center;justify-content:center;gap:12px;text-align:center;background:radial-gradient(circle at 50% 45%,rgba(0,255,136,.1),transparent 70%)}
+.outro-shield{width:90px;height:108px;filter:drop-shadow(0 0 30px rgba(0,255,136,.7));opacity:0;animation:shieldFloat 2.5s ease-in-out infinite,fadeIn .6s ease .1s both}
+.outro-title{font-size:24px;font-weight:900;color:var(--green);text-shadow:0 0 22px rgba(0,255,136,.5);opacity:0;animation:fadeUp .6s ease .6s both}
+.outro-sub{font-size:13px;color:var(--dim);opacity:0;animation:fadeUp .6s ease 1.0s both}
+.subscribe-box{background:linear-gradient(135deg,rgba(255,0,0,.18),rgba(255,51,85,.08));border:2px solid rgba(255,51,85,.5);border-radius:16px;padding:12px 22px;display:flex;flex-direction:column;align-items:center;gap:4px;opacity:0;animation:fadeUp .6s ease 1.6s both,subPulse 1.5s ease-in-out 2.2s infinite;box-shadow:0 0 30px rgba(255,51,85,.3)}
+@keyframes subPulse{0%,100%{box-shadow:0 0 30px rgba(255,51,85,.3);border-color:rgba(255,51,85,.5)}50%{box-shadow:0 0 55px rgba(255,51,85,.7);border-color:rgba(255,51,85,.9)}}
+.sub-bell{font-size:38px;animation:bellRing 1.2s ease-in-out infinite}
+@keyframes bellRing{0%,100%{transform:rotate(0)}25%{transform:rotate(-18deg)}75%{transform:rotate(18deg)}}
+.sub-text{font-size:18px;font-weight:900;color:#fff;text-shadow:0 0 14px rgba(255,51,85,.8)}
+.sub-desc{font-size:11px;color:#ffb3c0}
+.outro-brand{opacity:0;animation:fadeUp .6s ease 3.2s both;margin-top:6px}
+.outro-channel-name{font-size:22px;font-weight:900;color:#fff;letter-spacing:2px;padding:6px 18px;border:2px solid rgba(0,229,255,.5);border-radius:10px;background:rgba(0,229,255,.06)}
+
+/* ===== حركات مشتركة ===== */
+@keyframes fadeUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes emojiBounce{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-3px) scale(1.08)}}
+
+/* ===== شريط التحكم ===== */
+.controls{width:min(400px,92vw,calc((100vh - 130px) * 9 / 16));display:flex;flex-direction:column;gap:8px}
+.progress-wrap{display:flex;align-items:center;gap:8px}
+.progress-bar{flex:1;height:5px;background:rgba(0,229,255,.15);border-radius:5px;overflow:hidden;position:relative;cursor:pointer}
+.progress-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--cyan),var(--blue));border-radius:5px;transition:width .25s linear;box-shadow:0 0 10px rgba(0,229,255,.7)}
+.time-label{font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums;min-width:60px;text-align:center;font-weight:700}
+.btn-row{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
+.btn{background:rgba(10,18,36,.9);border:1px solid rgba(0,229,255,.3);color:var(--text);border-radius:10px;padding:8px 12px;font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;transition:all .2s;min-width:44px;justify-content:center}
+.btn:hover{background:rgba(0,229,255,.15);border-color:var(--cyan);transform:translateY(-1px)}
+.btn:active{transform:translateY(0) scale(.97)}
+.btn.off{opacity:.4;border-color:rgba(255,255,255,.1)}
+.btn svg{width:14px;height:14px}
+.vol-slider{width:70px;accent-color:var(--cyan);cursor:pointer}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="video-frame" id="videoFrame">
+    <canvas id="particles"></canvas>
+
+    <!-- ========== المشهد 1: HOOK ========== -->
+    <div class="scene" id="scene-hook">
+      <div class="bg-glow"></div>
+      <div class="hook-flash"></div>
+      <div class="hook-emoji">⚠️</div>
+      <div class="hook-phone-wrap">
+        <div class="alert-badge">!</div>
+        <div class="hook-phone phone-glitch">
+          <svg viewBox="0 0 220 420">
+            <rect x="10" y="10" width="200" height="400" rx="32" fill="#0a1020" stroke="#ff3355" stroke-width="2.5"/>
+            <rect x="24" y="34" width="172" height="352" rx="14" fill="#050a15"/>
+            <rect x="45" y="90" width="130" height="10" rx="5" fill="#ff3355" opacity="0.35"/>
+            <rect x="45" y="112" width="90" height="8" rx="4" fill="#ff3355" opacity="0.2"/>
+            <rect x="45" y="170" width="130" height="60" rx="8" fill="#1a0f1a" stroke="#ff3355" stroke-width="1" opacity="0.6"/>
+            <rect x="45" y="250" width="130" height="60" rx="8" fill="#1a0f1a" stroke="#ff3355" stroke-width="1" opacity="0.6"/>
+            <circle cx="110" cy="368" r="7" fill="#ff3355" opacity="0.6"/>
+            <text x="110" y="205" text-anchor="middle" font-family="Arial" font-size="34" fill="#ff3355" opacity="0.9">🔓</text>
+            <line class="hack-beam" x1="30" y1="150" x2="190" y2="150"/>
+            <line class="hack-beam" x1="30" y1="230" x2="190" y2="230" style="animation-delay:.3s"/>
+            <line class="hack-beam" x1="30" y1="310" x2="190" y2="310" style="animation-delay:.6s"/>
+            <rect class="scan-line" x="24" y="34" width="172" height="3" fill="#ff3355" opacity="0.85"/>
+          </svg>
+        </div>
+        <div class="danger-ring"></div>
+        <div class="danger-ring"></div>
+      </div>
+      <div class="hook-title">
+        <div class="hook-line alert">انتبه! ⚠️</div>
+        <div class="hook-line">هاتفك 💀</div>
+        <div class="hook-line danger">قد يكون مخترقاً</div>
+        <div class="hook-line now">الآن! 🔓</div>
+      </div>
+    </div>
+
+    <!-- ========== المشهد 2: INTRO ========== -->
+    <div class="scene" id="scene-intro">
+      <div class="bg-glow"></div>
+      <div class="channel-name">Moo7 Tech Mk</div>
+      <div class="intro-divider"></div>
+      <div class="intro-q">
+        <span class="w1">كيف</span>
+        <span class="w2">تُخترق؟ 🔓</span>
+        <br>
+        <span class="w3">وكيف تحمي نفسك؟ 🛡️</span>
+      </div>
+      <div class="intro-sub">دليل بصري كامل — من الهجوم إلى الحماية</div>
+    </div>
+
+    <!-- ========== المشهد 3: ما هو الاختراق ========== -->
+    <div class="scene" id="scene-what">
+      <div class="bg-glow"></div>
+      <div class="scene-title">ما هو <em>الاختراق؟ 🔓</em></div>
+      <div class="network-diagram">
+        <svg viewBox="0 0 300 200">
+          <line class="node-line" x1="50" y1="50" x2="150" y2="100"/>
+          <line class="node-line" x1="250" y1="50" x2="150" y2="100"/>
+          <line class="node-line" x1="50" y1="160" x2="150" y2="100"/>
+          <line class="node-line" x1="250" y1="160" x2="150" y2="100"/>
+          <line class="attack-path" x1="40" y1="40" x2="145" y2="95"/>
+          <circle class="node" cx="50" cy="50" r="16"/>
+          <circle class="node" cx="250" cy="50" r="16"/>
+          <circle class="node" cx="50" cy="160" r="16"/>
+          <circle class="node red" cx="250" cy="160" r="16"/>
+          <rect class="node" x="120" y="70" width="60" height="55" rx="8" style="animation-delay:.2s"/>
+          <rect x="132" y="82" width="36" height="22" rx="2" fill="rgba(0,229,255,.2)"/>
+          <circle class="lock-break" cx="150" cy="112" r="6" fill="none" stroke="#ff3355" stroke-width="2"/>
+          <text x="35" y="35" font-size="11" fill="#ff3355" font-weight="bold" text-anchor="middle">⚠️</text>
+        </svg>
+      </div>
+      <div class="def-list">
+        <div class="def-item"><span class="dot"></span>وصول غير مصرّح به إلى جهازك</div>
+        <div class="def-item"><span class="dot"></span>سرقة بياناتك وخصوصيتك</div>
+        <div class="def-item"><span class="dot"></span>دون علمك أو موافقتك</div>
+      </div>
+    </div>
+
+    <!-- ========== المشهد 4: طرق الاختراق ========== -->
+    <div class="scene" id="scene-methods">
+      <div class="bg-glow"></div>
+      <div class="scene-title">طرق <em>الاختراق الشائعة ⚠️</em></div>
+      <div class="methods-grid">
+        <div class="method-card red">
+          <div class="m-emoji">🎣</div>
+          <div class="m-name">تصيد احتيالي</div>
+          <div class="m-sub">بريد أو رابط مزيف</div>
+        </div>
+        <div class="method-card yellow">
+          <div class="m-emoji">🦠</div>
+          <div class="m-name">برامج ضارة</div>
+          <div class="m-sub">فيروسات وتروجان</div>
+        </div>
+        <div class="method-card purple">
+          <div class="m-emoji">📶</div>
+          <div class="m-name">واي فاي عام</div>
+          <div class="m-sub">شبكات غير آمنة</div>
+        </div>
+        <div class="method-card blue">
+          <div class="m-emoji">🔄</div>
+          <div class="m-name">تحديثات مهملة</div>
+          <div class="m-sub">ثغرات غير مسدودة</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== المشهد 5: كيف تحدث الإصابة ========== -->
+    <div class="scene" id="scene-how">
+      <div class="bg-glow"></div>
+      <div class="scene-title">كيف <em>تحدث الإصابة؟ 🔗</em></div>
+      <div class="flow">
+        <div class="flow-step"><div class="flow-num">1</div><div class="flow-text">رابط أو مرفق مزيف 📧</div></div>
+        <div class="flow-arrow">▼</div>
+        <div class="flow-step"><div class="flow-num">2</div><div class="flow-text">نقرة على الرابط 👆</div></div>
+        <div class="flow-arrow">▼</div>
+        <div class="flow-step"><div class="flow-num">3</div><div class="flow-text">تحميل وتنفيذ كود خبيث ⬇️</div></div>
+        <div class="flow-arrow">▼</div>
+        <div class="flow-step"><div class="flow-num">✓</div><div class="flow-text">سرقة البيانات والتحكم 💀</div></div>
+      </div>
+    </div>
+
+    <!-- ========== المشهد 6: علامات الاختراق ========== -->
+    <div class="scene" id="scene-signs">
+      <div class="bg-glow"></div>
+      <div class="scene-title">علامات <em>تحذيرية 🚨</em></div>
+      <div class="signs-list">
+        <div class="sign-item">
+          <div class="sign-icon">⚡</div>
+          <div class="sign-text"><div class="s-title">بطارية تنفد بسرعة</div><div class="s-desc">استهلاك خفي في الخلفية</div></div>
+        </div>
+        <div class="sign-item">
+          <div class="sign-icon">📢</div>
+          <div class="sign-text"><div class="s-title">إعلانات غريبة</div><div class="s-desc">نوافذ منبثقة عشوائية</div></div>
+        </div>
+        <div class="sign-item">
+          <div class="sign-icon">🐢</div>
+          <div class="sign-text"><div class="s-title">بطء في الجهاز</div><div class="s-desc">تطبيقات لا تستجيب</div></div>
+        </div>
+        <div class="sign-item">
+          <div class="sign-icon">📊</div>
+          <div class="sign-text"><div class="s-title">استهلاك بيانات مرتفع</div><div class="s-desc">إرسال بيانات دون علمك</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== المشهد 7: الحماية ========== -->
+    <div class="scene" id="scene-protect">
+      <div class="bg-glow"></div>
+      <div class="scene-title em-green">كيف <em>تحمي نفسك؟ 🛡️</em></div>
+      <div class="shield-center">
+        <div class="protect-pulse"></div>
+        <div class="protect-pulse"></div>
+        <svg viewBox="0 0 100 120" fill="none">
+          <path d="M50 6 L92 24 V58 C92 84 74 104 50 114 C26 104 8 84 8 58 V24 Z" fill="rgba(0,255,136,.12)" stroke="#00ff88" stroke-width="3"/>
+          <path d="M50 6 L92 24 V58 C92 84 74 104 50 114 C26 104 8 84 8 58 V24 Z" fill="none" stroke="#00ff88" stroke-width="1" opacity=".5"/>
+          <path d="M32 60 L45 73 L70 46" stroke="#00ff88" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="protect-orbit">
+        <div class="protect-item"><div class="p-emoji">🔐</div><div class="p-name">كلمة مرور قوية</div></div>
+        <div class="protect-item"><div class="p-emoji">📱</div><div class="p-name">مصادقة ثنائية</div></div>
+        <div class="protect-item"><div class="p-emoji">🔄</div><div class="p-name">تحديثات دورية</div></div>
+        <div class="protect-item"><div class="p-emoji">🛡️</div><div class="p-name">مضاد فيروسات</div></div>
+        <div class="protect-item"><div class="p-emoji">🌐</div><div class="p-name">VPN موثوق</div></div>
+      </div>
+    </div>
+
+    <!-- ========== المشهد 8: خطوات عملية ========== -->
+    <div class="scene" id="scene-steps">
+      <div class="bg-glow"></div>
+      <div class="scene-title">خطوات <em>عملية ✅</em></div>
+      <div class="steps-list">
+        <div class="step-item"><div class="step-num">1</div><div class="step-emoji">🔍</div><div class="step-text">تحقق من الروابط قبل النقر</div></div>
+        <div class="step-item"><div class="step-num">2</div><div class="step-emoji">🚫</div><div class="step-text">لا تحمّل من مصادر مجهولة</div></div>
+        <div class="step-item"><div class="step-num">3</div><div class="step-emoji">💾</div><div class="step-text">انسخ بياناتك احتياطياً</div></div>
+        <div class="step-item"><div class="step-num">4</div><div class="step-emoji">⚙️</div><div class="step-text">راجع أذونات التطبيقات</div></div>
+      </div>
+    </div>
+
+    <!-- ========== المشهد 9: الخلاصة + اشتراك ========== -->
+    <div class="scene" id="scene-outro">
+      <div class="bg-glow"></div>
+      <div class="outro-shield">
+        <svg viewBox="0 0 100 120" fill="none">
+          <path d="M50 6 L92 24 V58 C92 84 74 104 50 114 C26 104 8 84 8 58 V24 Z" fill="rgba(0,255,136,.15)" stroke="#00ff88" stroke-width="3"/>
+          <path d="M32 60 L45 73 L70 46" stroke="#00ff88" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="outro-title">الأمان مسؤوليتك 🔒</div>
+      <div class="outro-sub">احمِ نفسك... قبل أن يفوت الأوان</div>
+      <div class="subscribe-box">
+        <div class="sub-bell">🔔</div>
+        <div class="sub-text">اشترك في القناة</div>
+        <div class="sub-desc">وفعّل الجرس ليصلك كل جديد</div>
+      </div>
+      <div class="outro-brand">
+        <div class="outro-channel-name">Moo7 Tech Mk</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== شريط التحكم ========== -->
+  <div class="controls">
+    <div class="progress-wrap">
+      <div class="progress-bar" id="progressBar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div class="time-label" id="timeLabel">1 / 9</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn" id="playBtn" title="تشغيل / إيقاف">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      </button>
+      <button class="btn" id="restartBtn" title="إعادة">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg>
+      </button>
+      <button class="btn" id="musicBtn" title="الموسيقى">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3z"/></svg>
+      </button>
+      <button class="btn" id="voiceBtn" title="التعليق الصوتي">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+      </button>
+      <button class="btn" id="sfxBtn" title="المؤثرات الصوتية">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><circle cx="20" cy="19" r="2" fill="currentColor"/></svg>
+      </button>
+      <input class="vol-slider" type="range" id="volSlider" min="0" max="100" value="70" title="مستوى الصوت">
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   Moo7 Tech Mk — محرك مع موسيقى مسموعة وظهور متسلسل
+   ============================================================ */
+
+// ---------- الجسيمات ----------
+const canvas = document.getElementById('particles');
+const ctx = canvas.getContext('2d');
+let particles = [];
+function initParticles(){
+  const r = canvas.getBoundingClientRect();
+  canvas.width = r.width; canvas.height = r.height;
+  particles = [];
+  for(let i=0;i<45;i++){
+    particles.push({
+      x: Math.random()*canvas.width, y: Math.random()*canvas.height,
+      vx: (Math.random()-0.5)*0.35, vy: (Math.random()-0.5)*0.35,
+      r: Math.random()*1.6+0.4, a: Math.random()*0.5+0.15
+    });
+  }
+}
+function drawParticles(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  particles.forEach(p=>{
+    p.x += p.vx; p.y += p.vy;
+    if(p.x<0||p.x>canvas.width) p.vx*=-1;
+    if(p.y<0||p.y>canvas.height) p.vy*=-1;
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fillStyle = `rgba(0,229,255,${p.a})`;
+    ctx.fill();
+  });
+  requestAnimationFrame(drawParticles);
+}
+window.addEventListener('resize', initParticles);
+initParticles(); drawParticles();
+
+// ---------- تعريف المشاهد ----------
+const SCENES = [
+  { id:'hook', text:'انتبه! هل تعلم أن هاتفك قد يكون مخترقاً الآن؟',
+    minDur: 5, fallbackDur: 8, sfx:[
+      {t:0,type:'alert'},{t:0.8,type:'pop'},{t:1.5,type:'alert'},{t:2.3,type:'alert'},{t:3.2,type:'pop'}
+    ]},
+  { id:'intro', text:'مرحباً بكم في قناة Moo7 Tech Mk. في هذا الفيديو، سنكشف كيف يمكن اختراقك، وكيف تحمي نفسك.',
+    minDur: 5, fallbackDur: 10, sfx:[
+      {t:0,type:'whoosh'},{t:0.3,type:'pop'},{t:0.7,type:'pop'},{t:1.7,type:'pop'}
+    ]},
+  { id:'what', text:'الاختراق هو وصول غير مصرح به إلى جهازك أو بياناتك، دون علمك أو موافقتك.',
+    minDur: 6, fallbackDur: 11, sfx:[
+      {t:0,type:'whoosh'},{t:0.9,type:'pop'},{t:1.4,type:'pop'},{t:1.9,type:'pop'}
+    ]},
+  { id:'methods', text:'هناك عدة طرق للاختراق: التصيد الاحتيالي، البرامج الضارة، شبكات الواي فاي العامة، والتحديثات المهملة.',
+    minDur: 8, fallbackDur: 15, sfx:[
+      {t:0,type:'whoosh'},{t:0.7,type:'pop'},{t:1.9,type:'pop'},{t:3.1,type:'pop'},{t:4.3,type:'pop'}
+    ]},
+  { id:'how', text:'تبدأ الإصابة عادة بنقرة على رابط مزيف، ثم تحميل ملف خبيث، ثم تنفيذ الكود، وسرقة بياناتك.',
+    minDur: 8, fallbackDur: 12, sfx:[
+      {t:0,type:'whoosh'},{t:0.5,type:'pop'},{t:1.6,type:'pop'},{t:2.7,type:'pop'},{t:3.8,type:'success'}
+    ]},
+  { id:'signs', text:'راقب هذه العلامات: بطارية تنفد بسرعة، إعلانات غريبة، بطء في الجهاز، واستهلاك غير طبيعي للبيانات.',
+    minDur: 7, fallbackDur: 12, sfx:[
+      {t:0,type:'whoosh'},{t:0.6,type:'pop'},{t:1.5,type:'pop'},{t:2.4,type:'pop'},{t:3.3,type:'pop'}
+    ]},
+  { id:'protect', text:'لحماية نفسك: استخدم كلمات مرور قوية، فعّل المصادقة الثنائية، حدّث برامجك، استخدم مضاد فيروسات، وتجنب الشبكات العامة غير الآمنة.',
+    minDur: 9, fallbackDur: 16, sfx:[
+      {t:0,type:'whoosh'},{t:0.4,type:'success'},{t:1.2,type:'pop'},{t:1.8,type:'pop'},{t:2.4,type:'pop'},{t:3.0,type:'pop'},{t:3.6,type:'pop'}
+    ]},
+  { id:'steps', text:'واتبع هذه الخطوات: تحقق من الروابط، لا تحمّل من مصادر مجهولة، انسخ بياناتك احتياطياً، وراجع أذونات التطبيقات.',
+    minDur: 7, fallbackDur: 12, sfx:[
+      {t:0,type:'whoosh'},{t:0.6,type:'pop'},{t:1.5,type:'pop'},{t:2.4,type:'pop'},{t:3.3,type:'pop'}
+    ]},
+  { id:'outro', text:'الأمان مسؤوليتك. اشترك في قناة Moo7 Tech Mk، وفعّل الجرس ليصلك كل جديد. احمِ نفسك قبل أن يفوت الأوان.',
+    minDur: 9, fallbackDur: 14, sfx:[
+      {t:0,type:'whoosh'},{t:0.2,type:'pop'},{t:0.6,type:'success'},{t:1.6,type:'bell'},{t:2.6,type:'bell'},{t:3.4,type:'success'}
+    ]}
+];
+
+const sceneEls = {};
+SCENES.forEach(s => { sceneEls[s.id] = document.getElementById('scene-' + s.id); });
+
+// ---------- الحالة ----------
+let currentIndex = 0;
+let isPlaying = false;
+let isFinished = false;
+let sceneStartTime = 0;
+let sceneSfxTimers = [];
+let advanceTimer = null;
+let voiceSafetyTimer = null;
+let currentUtterance = null;
+
+// ---------- عناصر التحكم ----------
+const playBtn = document.getElementById('playBtn');
+const restartBtn = document.getElementById('restartBtn');
+const musicBtn = document.getElementById('musicBtn');
+const voiceBtn = document.getElementById('voiceBtn');
+const sfxBtn = document.getElementById('sfxBtn');
+const volSlider = document.getElementById('volSlider');
+const progressFill = document.getElementById('progressFill');
+const timeLabel = document.getElementById('timeLabel');
+const progressBar = document.getElementById('progressBar');
+
+// ---------- تفعيل مشهد ----------
+function activateSceneElement(id){
+  Object.values(sceneEls).forEach(el => el && el.classList.remove('active'));
+  const el = sceneEls[id];
+  if(el){
+    void el.offsetWidth;
+    el.classList.add('active');
+  }
+}
+
+// ---------- تنظيف المؤقتات ----------
+function clearSceneTimers(){
+  sceneSfxTimers.forEach(t => clearTimeout(t));
+  sceneSfxTimers = [];
+  if(advanceTimer){ clearTimeout(advanceTimer); advanceTimer = null; }
+  if(voiceSafetyTimer){ clearTimeout(voiceSafetyTimer); voiceSafetyTimer = null; }
+}
+
+// ---------- جدولة المؤثرات ----------
+function scheduleSfx(scene){
+  if(!scene.sfx) return;
+  scene.sfx.forEach(s => {
+    const tid = setTimeout(() => {
+      if(isPlaying) playSfx(s.type);
+    }, s.t * 1000);
+    sceneSfxTimers.push(tid);
+  });
+}
+
+// ---------- بدء مشهد ----------
+function startScene(index){
+  if(index >= SCENES.length){ finishVideo(); return; }
+
+  clearSceneTimers();
+  if(window.speechSynthesis) speechSynthesis.cancel();
+  currentUtterance = null;
+  isFinished = false;
+  currentIndex = index;
+
+  const scene = SCENES[index];
+  activateSceneElement(scene.id);
+  sceneStartTime = performance.now();
+  scheduleSfx(scene);
+  updateProgress();
+
+  if(voiceOn && window.speechSynthesis && 'SpeechSynthesisUtterance' in window){
+    playVoiceAndWait(scene);
+  } else {
+    scheduleAdvance(scene.fallbackDur);
+  }
+}
+
+// ---------- تشغيل الصوت والانتظار ----------
+function playVoiceAndWait(scene){
+  const u = new SpeechSynthesisUtterance(scene.text);
+  u.lang = 'ar-SA';
+  u.rate = 1.0;
+  u.pitch = 1.0;
+  u.volume = 0.95;
+
+  const voices = speechSynthesis.getVoices();
+  const ar = voices.find(v => v.lang && v.lang.toLowerCase().startsWith('ar'));
+  if(ar) u.voice = ar;
+
+  currentUtterance = u;
+
+  let handled = false;
+  const finish = () => {
+    if(handled) return;
+    handled = true;
+    if(currentUtterance !== u) return;
+    if(!isPlaying) return;
+    const elapsed = (performance.now() - sceneStartTime) / 1000;
+    const wait = Math.max(0.8, scene.minDur - elapsed);
+    scheduleAdvance(wait);
+  };
+
+  u.onend = finish;
+  u.onerror = finish;
+
+  const safetyDur = Math.max(scene.fallbackDur * 1.8, scene.text.length * 0.4);
+  voiceSafetyTimer = setTimeout(finish, safetyDur * 1000);
+
+  speechSynthesis.speak(u);
+}
+
+// ---------- جدولة الانتقال ----------
+function scheduleAdvance(seconds){
+  if(advanceTimer) clearTimeout(advanceTimer);
+  const expectedIndex = currentIndex;
+  advanceTimer = setTimeout(() => {
+    if(!isPlaying) return;
+    if(currentIndex !== expectedIndex) return;
+    startScene(currentIndex + 1);
+  }, seconds * 1000);
+}
+
+// ---------- إنهاء الفيديو ----------
+function finishVideo(){
+  isFinished = true;
+  isPlaying = false;
+  clearSceneTimers();
+  if(window.speechSynthesis) speechSynthesis.cancel();
+  currentUtterance = null;
+  updatePlayBtn();
+  updateProgress();
+}
+
+// ---------- تشغيل/إيقاف/إعادة ----------
+function playVideo(){
+  if(isFinished){ restartVideo(); return; }
+  if(isPlaying) return;
+  isPlaying = true;
+  if(!audioCtx) initAudio();
+  if(audioCtx.state === 'suspended') audioCtx.resume();
+  if(musicOn) startMusic();
+  startScene(currentIndex);
+  updatePlayBtn();
+}
+
+function pauseVideo(){
+  if(!isPlaying) return;
+  isPlaying = false;
+  clearSceneTimers();
+  if(window.speechSynthesis) speechSynthesis.cancel();
+  currentUtterance = null;
+  updatePlayBtn();
+}
+
+function restartVideo(){
+  isFinished = false;
+  isPlaying = false;
+  currentIndex = 0;
+  clearSceneTimers();
+  if(window.speechSynthesis) speechSynthesis.cancel();
+  currentUtterance = null;
+  playVideo();
+}
+
+playBtn.addEventListener('click', () => {
+  if(isPlaying) pauseVideo();
+  else playVideo();
+});
+restartBtn.addEventListener('click', restartVideo);
+
+function updatePlayBtn(){
+  playBtn.innerHTML = isPlaying
+    ? '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+}
+
+// ---------- شريط التقدم ----------
+function updateProgress(){
+  if(isFinished){
+    progressFill.style.width = '100%';
+    timeLabel.textContent = SCENES.length + ' / ' + SCENES.length;
+    return;
+  }
+  if(!isPlaying) return;
+  const scene = SCENES[currentIndex];
+  if(!scene) return;
+  const elapsed = (performance.now() - sceneStartTime) / 1000;
+  const sceneProgress = Math.min(1, elapsed / Math.max(scene.minDur, 1));
+  const total = ((currentIndex + sceneProgress) / SCENES.length) * 100;
+  progressFill.style.width = total + '%';
+  timeLabel.textContent = (currentIndex + 1) + ' / ' + SCENES.length;
+}
+
+function tick(){
+  if(isPlaying) updateProgress();
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+
+// ---------- النقر على شريط التقدم ----------
+progressBar.addEventListener('click', e => {
+  const rect = progressBar.getBoundingClientRect();
+  const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  const targetIndex = Math.min(SCENES.length - 1, Math.floor(ratio * SCENES.length));
+  clearSceneTimers();
+  if(window.speechSynthesis) speechSynthesis.cancel();
+  currentUtterance = null;
+  if(isPlaying){
+    isFinished = false;
+    startScene(targetIndex);
+  } else {
+    currentIndex = targetIndex;
+    isFinished = false;
+    activateSceneElement(SCENES[targetIndex].id);
+    progressFill.style.width = ((targetIndex / SCENES.length) * 100) + '%';
+    timeLabel.textContent = (targetIndex + 1) + ' / ' + SCENES.length;
+  }
+});
+
+/* ============================================================
+   نظام الصوت — موسيقى محسّنة
+   ============================================================ */
+let audioCtx = null, masterGain = null, musicGain = null, sfxGain = null;
+let musicOn = true, voiceOn = true, sfxOn = true;
+let musicPlaying = false;
+let chordTimer = null, arpTimer = null, kickTimer = null;
+let currentChordOscs = [];
+let chordIdx = 0;
+
+// تتابع أوتار: Am – F – C – G
+const CHORDS = [
+  [220.00, 261.63, 329.63], // Am
+  [174.61, 220.00, 261.63], // F
+  [261.63, 329.63, 392.00], // C
+  [196.00, 246.94, 293.66]  // G
+];
+
+function initAudio(){
+  if(audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  masterGain = audioCtx.createGain();
+  masterGain.gain.value = 0.7;
+  masterGain.connect(audioCtx.destination);
+  musicGain = audioCtx.createGain();
+  musicGain.gain.value = 0.42; // 🔼 أعلى من قبل بكثير
+  musicGain.connect(masterGain);
+  sfxGain = audioCtx.createGain();
+  sfxGain.gain.value = 0.55;
+  sfxGain.connect(masterGain);
+}
+
+// ---------- تشغيل وتر ----------
+function playChord(notes){
+  if(!audioCtx) return;
+  const now = audioCtx.currentTime;
+  // fade out السابق
+  currentChordOscs.forEach(({osc, g}) => {
+    try{
+      g.gain.cancelScheduledValues(now);
+      g.gain.setValueAtTime(g.gain.value, now);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
+      osc.stop(now + 0.6);
+    }catch(e){}
+  });
+  currentChordOscs = [];
+
+  // تشغيل الوتر الجديد
+  notes.forEach((freq, i) => {
+    const osc = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    osc.type = i === 0 ? 'triangle' : 'sine';
+    osc.frequency.value = freq;
+    const vol = i === 0 ? 0.09 : 0.07;
+    g.gain.setValueAtTime(0, now);
+    g.gain.linearRampToValueAtTime(vol, now + 0.35);
+    osc.connect(g).connect(musicGain);
+    osc.start(now);
+    currentChordOscs.push({osc, g});
+  });
+
+  // باس الجذر أوكتاف أخفض
+  const bassOsc = audioCtx.createOscillator();
+  const bassG = audioCtx.createGain();
+  bassOsc.type = 'sine';
+  bassOsc.frequency.value = notes[0] / 4;
+  bassG.gain.setValueAtTime(0, now);
+  bassG.gain.linearRampToValueAtTime(0.14, now + 0.3);
+  bassOsc.connect(bassG).connect(musicGain);
+  bassOsc.start(now);
+  currentChordOscs.push({osc: bassOsc, g: bassG});
+}
+
+// ---------- أربيجيو لحني ----------
+function playArp(freq){
+  if(!audioCtx) return;
+  const now = audioCtx.currentTime;
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.type = 'sine';
+  o.frequency.value = freq;
+  g.gain.setValueAtTime(0, now);
+  g.gain.linearRampToValueAtTime(0.1, now + 0.02);
+  g.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+  o.connect(g).connect(musicGain);
+  o.start(now); o.stop(now + 0.6);
+}
+
+// ---------- نبضة باس خفيفة ----------
+function playSoftKick(){
+  if(!audioCtx) return;
+  const now = audioCtx.currentTime;
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.type = 'sine';
+  o.frequency.setValueAtTime(110, now);
+  o.frequency.exponentialRampToValueAtTime(45, now + 0.15);
+  g.gain.setValueAtTime(0.18, now);
+  g.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+  o.connect(g).connect(musicGain);
+  o.start(now); o.stop(now + 0.25);
+}
+
+// ---------- بدء/إيقاف الموسيقى ----------
+function startMusic(){
+  if(!audioCtx || musicPlaying) return;
+  musicPlaying = true;
+  chordIdx = 0;
+  playChord(CHORDS[0]);
+
+  // تغيير الوتر كل 3.2 ثانية
+  chordTimer = setInterval(() => {
+    if(!musicPlaying || !audioCtx) return;
+    chordIdx = (chordIdx + 1) % CHORDS.length;
+    playChord(CHORDS[chordIdx]);
+  }, 3200);
+
+  // أربيجيو كل 420 مللي
+  const arpOrder = [0, 2, 1, 2, 0, 1, 2, 1];
+  let arpStep = 0;
+  arpTimer = setInterval(() => {
+    if(!musicPlaying || !audioCtx || audioCtx.state !== 'running') return;
+    const chord = CHORDS[chordIdx];
+    const idx = arpOrder[arpStep % arpOrder.length];
+    arpStep++;
+    playArp(chord[idx] * 2); // أوكتاف أعلى
+  }, 420);
+
+  // نبضة كل 820 مللي
+  kickTimer = setInterval(() => {
+    if(!musicPlaying || !audioCtx) return;
+    playSoftKick();
+  }, 820);
+}
+
+function stopMusic(){
+  musicPlaying = false;
+  if(chordTimer){ clearInterval(chordTimer); chordTimer = null; }
+  if(arpTimer){ clearInterval(arpTimer); arpTimer = null; }
+  if(kickTimer){ clearInterval(kickTimer); kickTimer = null; }
+  currentChordOscs.forEach(({osc, g}) => {
+    try{
+      const now = audioCtx.currentTime;
+      g.gain.cancelScheduledValues(now);
+      g.gain.setValueAtTime(g.gain.value, now);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + 0.4);
+      osc.stop(now + 0.5);
+    }catch(e){}
+  });
+  currentChordOscs = [];
+}
+
+// ---------- المؤثرات الصوتية ----------
+function playSfx(type){
+  if(!audioCtx || !sfxOn) return;
+  if(audioCtx.state === 'suspended') audioCtx.resume();
+  const now = audioCtx.currentTime;
+  try{
+    if(type === 'pop'){
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(780, now);
+      o.frequency.exponentialRampToValueAtTime(1500, now+0.07);
+      g.gain.setValueAtTime(0.18, now);
+      g.gain.exponentialRampToValueAtTime(0.001, now+0.13);
+      o.connect(g).connect(sfxGain);
+      o.start(now); o.stop(now+0.15);
+    }
+    else if(type === 'whoosh'){
+      const buf = audioCtx.createBuffer(1, audioCtx.sampleRate*0.35, audioCtx.sampleRate);
+      const data = buf.getChannelData(0);
+      for(let i=0;i<data.length;i++){
+        const env = 1 - i/data.length;
+        data[i] = (Math.random()*2-1)*env*env;
+      }
+      const src = audioCtx.createBufferSource(); src.buffer = buf;
+      const filt = audioCtx.createBiquadFilter();
+      filt.type = 'bandpass';
+      filt.frequency.setValueAtTime(2400, now);
+      filt.frequency.exponentialRampToValueAtTime(220, now+0.3);
+      filt.Q.value = 1.2;
+      const g = audioCtx.createGain();
+      g.gain.setValueAtTime(0.22, now);
+      g.gain.exponentialRampToValueAtTime(0.001, now+0.32);
+      src.connect(filt).connect(g).connect(sfxGain);
+      src.start(now);
+    }
+    else if(type === 'alert'){
+      for(let i=0;i<2;i++){
+        const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = 'square';
+        o.frequency.setValueAtTime(880, now+i*0.09);
+        const t0 = now + i*0.09;
+        g.gain.setValueAtTime(0, t0);
+        g.gain.linearRampToValueAtTime(0.09, t0+0.01);
+        g.gain.exponentialRampToValueAtTime(0.001, t0+0.08);
+        o.connect(g).connect(sfxGain);
+        o.start(t0); o.stop(t0+0.1);
+      }
+    }
+    else if(type === 'bell'){
+      [880, 1108, 1320, 1760].forEach((f,i)=>{
+        const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = 'sine'; o.frequency.value = f;
+        const t0 = now + i*0.04;
+        g.gain.setValueAtTime(0, t0);
+        g.gain.linearRampToValueAtTime(0.14/(i+1), t0+0.02);
+        g.gain.exponentialRampToValueAtTime(0.001, t0+0.7);
+        o.connect(g).connect(sfxGain);
+        o.start(t0); o.stop(t0+0.75);
+      });
+    }
+    else if(type === 'success'){
+      [523.25, 659.25, 783.99, 1046.5].forEach((f,i)=>{
+        const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = 'sine'; o.frequency.value = f;
+        const t0 = now + i*0.08;
+        g.gain.setValueAtTime(0, t0);
+        g.gain.linearRampToValueAtTime(0.12, t0+0.02);
+        g.gain.exponentialRampToValueAtTime(0.001, t0+0.35);
+        o.connect(g).connect(sfxGain);
+        o.start(t0); o.stop(t0+0.38);
+      });
+    }
+  }catch(e){}
+}
+
+// ---------- أزرار الصوت ----------
+musicBtn.addEventListener('click', () => {
+  musicOn = !musicOn;
+  musicBtn.classList.toggle('off', !musicOn);
+  if(!audioCtx) initAudio();
+  if(musicOn){
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    startMusic();
+  } else stopMusic();
+});
+
+sfxBtn.addEventListener('click', () => {
+  sfxOn = !sfxOn;
+  sfxBtn.classList.toggle('off', !sfxOn);
+  if(sfxOn) playSfx('pop');
+});
+
+voiceBtn.addEventListener('click', () => {
+  voiceOn = !voiceOn;
+  voiceBtn.classList.toggle('off', !voiceOn);
+  if(isPlaying){
+    startScene(currentIndex);
+  } else {
+    if(window.speechSynthesis) speechSynthesis.cancel();
+    currentUtterance = null;
+  }
+});
+
+volSlider.addEventListener('input', e => {
+  const v = e.target.value / 100;
+  if(masterGain) masterGain.gain.value = v;
+});
+
+// ---------- اختصارات ----------
+document.addEventListener('keydown', e => {
+  if(e.code === 'Space'){ e.preventDefault(); playBtn.click(); }
+  if(e.key === 'r' || e.key === 'R') restartVideo();
+});
+
+// ---------- تحميل الأصوات ----------
+if(window.speechSynthesis){
+  speechSynthesis.getVoices();
+  speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
+}
+
+// ---------- الحالة الابتدائية ----------
+sceneEls.hook.classList.add('active');
+currentIndex = 0;
+updatePlayBtn();
+progressFill.style.width = '0%';
+timeLabel.textContent = '1 / ' + SCENES.length;
+</script>
+</body>
+</html>
